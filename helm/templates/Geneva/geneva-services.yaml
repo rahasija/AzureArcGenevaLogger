@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.Prefix }}-geneva-services
+  namespace: '{{ .Values.Release.Namespace }}'
+  labels:
+    app: geneva-services
+spec:
+  type: ClusterIP
+  ports:
+    - name: mds-fluentd-tcp
+      protocol: TCP
+      port: 8130
+      targetPort: 8130
+  selector:
+    app.kubernetes.io/name: azure-arc-k8s
+    app.kubernetes.io/component: geneva-service

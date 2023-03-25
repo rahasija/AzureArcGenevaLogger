@@ -1,0 +1,42 @@
+# https://msazure.visualstudio.com/One/_wiki/wikis/One.wiki/141686/Extension-Identity
+# When put cluster extesnion instance is called by customer, it should have "identity": {"type": "SystemAssigned"}, in body.resources.
+# Identity pod running in azure arc namespace will get the token on partner extension behalf, by using partner extension system identity.
+
+# The purpose of this CR is, we want arc cluster identity operator to know that it has to create secret containeing
+# the access token to  be stored in the release namespace.
+# We need to create this CR in azure-arc namespace.
+
+# User who is installing helm should have perms to create this CR in azure-arc namespace. 
+apiVersion: clusterconfig.azure.com/v1beta1
+kind: AzureExtensionIdentity
+metadata:
+  name: "{{ required "A valid .Values.Azure.Extension.Name entry required!" .Values.Azure.Extension.Name }}-override" 
+  namespace: azure-arc    
+spec:
+  serviceAccounts: # is required, to ensure that your service account of namespace has access to token secret.
+    - name: '{{ required "A valid .Values.GenevaServiceAccount.Name entry required!" .Values.GenevaServiceAccount.Name }}' # servic account name who would like to acceess the token.
+      namespace: '{{ required "A valid .Values.Release.Namespace entry required!" .Values.Release.Namespace }}' # namespace in which service account is hosted.
+  tokenNamespace: '{{ required "A valid .Values.Release.Namespace entry required!" .Values.Release.Namespace }}' #namespace in which the token secret should be created.
+
+ # Sample put cluster extension instance called by portal
+ # {
+ #   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+ #   "contentVersion": "1.0.0.0",
+ #   "parameters": {},
+ #   "resources": [
+ #       {
+ #           "type": "Microsoft.KubernetesConfiguration/extensions",
+ #           "apiVersion": "2022-11-01",
+ #           "name": "azuremigrate-partnername",
+ #           "location": "eastus",
+ #           "dependsOn": [],
+ #           "identity": {
+ #               "type": "SystemAssigned"
+ #           },
+ #           "properties": {
+ #               "extensionType": "microsoft.offazure.partnername"
+#          },
+#            "scope": "Microsoft.Kubernetes/connectedClusters/rahasijaConnectedCluster020224Eastus"
+#        }
+#    ]
+#}
