@@ -1,44 +1,40 @@
 # This is a YAML-formatted file.
-
-#--------------------------------------------------------------------------------------------------
-# Start of the parameters passed to azure arc geneva logger helm. 
 # Declare variables to be passed into your templates.
-  Geneva:
-    GCS:
-      AuthIdType: "AuthMSIToken"
-      Environment: "DiagnosticsProd"
-      Account: "AzureMigrateExtProd"
-      Namespace: "AzureMigrateExtProd"
-      ConfigVersion: "1.7"
-    MDM:
-      Account: AzureMigrateExtProd
+Geneva:
+  GCS:
+    AuthIdType: "AuthMSIToken"
+    Environment: "DiagnosticsProd"
+    Account: "AzureMigrateExtProd"
+    Namespace: "AzureMigrateExtProd"
+    ConfigVersion: "1.7"
+  MDM:
+    Account: AzureMigrateExtProd
 
-  Fluentd:
-    FilePathsCommaSeparated: "/var/log/containers/azuremigrate-springboot-controller-manager**manager**.log"
+Fluentd:
+  FilePathsCommaSeparated: "/var/log/containers/azuremigrate-springboot-controller-manager**manager**.log"
 
-  Prefix: "azuremigrate-springboot"
+Prefix: "azuremigrate-springboot"
 
-  GenevaServiceAccount:
-    Name: "azuremigrate-springboot-geneva-sa"
+GenevaServiceAccount:
+  Name: "azuremigrate-springboot-geneva-sa"
 
-  nameOverride: "springboot-azuremigrate-chart"
-  fullnameOverride: "springboot-azuremigrate-chart"
+nameOverride: "springboot-azuremigrate-chart"
+fullnameOverride: "springboot-azuremigrate-chart"
  
-  Release: # this value should match with what we provide during az-clusterextensioncreate
-    Namespace: "springbootnamespace"  
- #end of the parameters passed to azure arc geneva logger.
+Release: # this value should match with what we provide during az-clusterextensioncreate
+  Namespace: "springbootnamespace"  
 
-  # enter dummy values as this values will be overwriiten when helm will be installed as 
-  # part of azure cluster extension.
-  # it will be anyways overwritten by the extesnion manager with correct values.
-  Azure:
-    Extension:
-      Name: "aaa"
-      ResourceId: "aaa"
-    Cluster:
-      Region: "aaa"
-    proxySettings:
-      httpProxy: ""
-      httpsProxy: ""
-      noProxy: ""  
+
+#Below helm values will be provided by the extension manager(arc agentry) at parent chart level for e.g.
+# helm install azure-springboot azure-springboot-$version.tgz  --create-namespace  --namespace=springbootnamespace --set Values.global.Azure.Extension.Name="myspringbootclusterextension".
+#  Azure:
+#    Extension:
+#      Name: ""
+#      ResourceId: ""
+#    Cluster:
+#      Region: ""
+#    proxySettings:
+#      httpProxy: ""
+#      httpsProxy: ""
+#      noProxy: ""  
 #--------------------------------------------------------------------------------------------------
