@@ -1,0 +1,196 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.Prefix }}-geneva-daemonset
+  namespace: '{{ .Values.Release.Namespace }}'
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+      # if the deployment spec itself didn't change the fluentd containers and others keeps running with the old configuration file resulting
+      # in an inconsistent deployment.
+      # The sha256sum function can be used to ensure a deployment's spec and pod's annotation section is updated if any of the three config file changes:
+      annotations:
+       checksum/fluentdConfig: {{ include (print $.Template.BasePath "/Geneva/ConfigMaps/fluentd-conf.yaml") . | sha256sum }}
+       checksum/gcsTenantConfig: {{ include (print $.Template.BasePath "/Geneva/ConfigMaps/gcstenant-conf.yaml") . | sha256sum }}
+    spec:
+      serviceAccount: '{{ .Values.GenevaServiceAccount.Name }}'
+      serviceAccountName: '{{ .Values.GenevaServiceAccount.Name }}'
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+            - name: fluentd ## collecting logs from host node file system and transforming, filtering the log as per tag.
+              # output plugin is mdsd which would open socket which is backed by unique file. 
+              # It is similar to how port, ip address are binded to socket and web server thread is listening on that socket and pushing it to queue.
+              image: linuxgeneva-microsoft.azurecr.io/genevafluentd_td-agent:master_20220304.1
+              imagePullPolicy: Always
+              env:
+              - name: FLUENTD_CONF
+                value: /etc/fluentd/fluentd.conf # configmap is mounted on /etc/fluentd. configmap has key fluentd.conf which would be mounted as file in /etc/fluentd.
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 1024Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+              volumeMounts:
+              - name: fluentd-conf-vol # volume where config file would be mounted. 
+                mountPath: /etc/fluentd
+              - name: fluentd-buffer-vol # volume where fluentd will do bufferring.
+                mountPath: "/var/log/td-agent"
+              - name: mdsd-run-vol # socket directory path, which fluentd would try to connect to, so that it can send the logs to mdsd.
+                mountPath: "/var/run/mdsd"
+              - name: docker-log-vol #In docker system, pod logs are emitted into this host directory, fluentd will mount this as volume, so that it can acceess this log. 
+                mountPath: /var/lib/docker/containers # mount point in container.
+                readOnly: true
+              - name: var-log-vol # In Kubernetes system, pod logs are emitted into this directory. 
+                mountPath: /var/log
+              - name: run-journal-vol # to collect journal logs.
+                mountPath: /run/log/journal
+                readOnly: true
+            - name: amacoreagent
+              image: linuxgeneva-microsoft.azurecr.io/amacoreagentjit:1.1.172
+              env:
+              - name: PA_CONFIG_PORT
+                value: "12563"
+              - name: MONITORING_GCS_AUTH_ID_TYPE
+                value: AuthMSIToken
+              - name: SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH
+                value: "1"
+              - name: PA_TENANTS_DIR
+                value: /etc/tenants
+              - name: PA_GIG_BRIDGE_MODE
+                value: "1"
+              - name: FLUENTD_PORT
+                value: "/var/run/mdsd/default_djson.socket"
+              - name: PA_FLUENT_SOCKET_PORT
+                value: "15000"
+              - name: PA_TRACEFLAGS
+                value: "4"
+              - name: OTLP_DEBUG_VERBOSE
+                value: "1"
+              - name: MDSD_DEBUG_LOG_FLAGS
+                value: "-T 0x2002"
+              - name: TENANT
+                value: '{{ .Values.Azure.Cluster.Region }}'
+              - name: ROLE
+                value: '{{ .Values.Geneva.GCS.Account }}'
+              - name: ROLEINSTANCE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: MONITORING_TENANT
+                value: '{{ .Values.Azure.Cluster.Region }}'
+              - name: MONITORING_ROLE
+                value: '{{ .Values.Geneva.GCS.Account }}'
+              - name: MONITORING_ROLE_INSTANCE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: MONITORING_GCS_ENVIRONMENT
+                value: '{{ .Values.Geneva.GCS.Environment }}'
+              - name: MONITORING_GCS_ACCOUNT
+                value: '{{ .Values.Geneva.GCS.Account }}'
+              - name: MONITORING_GCS_REGION
+                value: '{{ .Values.Azure.Cluster.Region }}'
+              - name: MONITORING_GCS_NAMESPACE
+                value: '{{ .Values.Geneva.GCS.Namespace }}'
+              - name: MONITORING_CONFIG_VERSION
+                value: "{{ .Values.Geneva.GCS.ConfigVersion }}"
+              - name: MDSD_CONFIG_DIR
+                value: /tmp
+              - name: DOCKER_LOGGING
+                value: "true"
+              - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
+                value: "true"
+              - name: http_proxy
+                value: '{{ .Values.Azure.proxySettings.httpProxy }}'
+              - name: https_proxy
+                value: '{{ .Values.Azure.proxySettings.httpsProxy }}'
+              - name: no_proxy
+                value: '{{ .Values.Azure.proxySettings.noProxy }}'  
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 1024Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+              volumeMounts:
+                - name: tenants-conf-vol # place where amacore agent configuration would be present.
+                  mountPath: /etc/tenants
+                - name: var-log-vol
+                  mountPath: /geneva/geneva_logs
+                - name: mdsd-run-vol # socket file path, which would be listened up by ama core agent.
+                  mountPath: /var/run/mdsd
+            - name: msi-adapter
+              image: mcr.microsoft.com/azurearck8s/msi-adapter:1.0.0
+              imagePullPolicy: Always
+              env:
+              - name: TOKEN_NAMESPACE #msi-adapter will use its service account to get secrets in this namespace.
+                value: "{{ required "A valid .Values.Release.Namespace entry required!" .Values.Release.Namespace }}"
+              - name: EXTENSION_ARMID
+                value: "{{ required "A valid .Values.Azure.Extension.ResourceId entry required!" .Values.Azure.Extension.ResourceId }}"
+              - name: EXTENSION_NAME #azureclusteridentityrequest cr created by msi-adapter will have spec.resourceid set to this name.
+                value: "{{ required "A valid .Values.Azure.Extension.Name entry required!" .Values.Azure.Extension.Name }}"
+              - name: CLUSTER_TYPE
+                value: ConnectedClusters
+              - name: CLUSTER_IDENTITY
+                value: "false" 
+                # false will make sure azure cluster identity request CR created with audience https://monitor.core.windows.net/ 
+                # has resourceid set to extension name env variable specified above, which will make sure token is populated in the status field of th mentioned azure cluster identity request CR. 
+              - name: MANAGED_IDENTITY_AUTH
+                value: "true"
+              - name: TEST_MODE
+                value: "false"
+              - name: TEST_FILE
+                value: "/data/token.json"
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 100Mi
+                requests:
+                  cpu: 20m
+                  memory: 50Mi
+              securityContext:
+                capabilities:
+                  add:
+                  - NET_ADMIN  
+      volumes:
+      - name: fluentd-conf-vol # fluentd-conf config map should be present in kubernetes system before mounting this as volume.
+        configMap:
+          name: {{ required "A valid .Values.Prefix entry required!" .Values.Prefix }}-fluentd-conf
+      - name: run-journal-vol # used by fluentd agent to get journal log
+        hostPath:
+          path: /run/log/journal
+      - name: fluentd-buffer-vol # used by fluentd agent for buffering the logs.
+        emptyDir: {}
+      - name: var-log-vol # used by fluentd for collecting the pod logs in kubernetes env.
+        hostPath:
+          path: /var/log
+      - name: docker-log-vol # used by fluentd agent for collecting the pod logs in docker env.
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: mdsd-run-vol # used by fluentd for outputting the transformed logs and used by amacore agent for pulling the logs, unix socket IPC.
+        emptyDir: {}
+      - name: vsa-offnode # used by ama core agent.
+        emptyDir: {}
+      - name: mdsd-persistence-vol # used by amacoreagent 
+        hostPath:
+          path: /var/opt/microsoft/linuxmonagent/events
+      - name: tenants-conf-vol # used by amacore warm path agent for accessdiong geneva warm path configuration.
+        configMap:
+          name: {{ .Values.Prefix }}-gcstenant-conf 

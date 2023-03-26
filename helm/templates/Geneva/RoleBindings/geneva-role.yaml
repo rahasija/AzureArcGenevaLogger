@@ -1,0 +1,44 @@
+# For getting msi token of cluster extension: 
+# msi adapter will create azure cluster identity cr and cluster identity operator in azure-arc will reconcole on this CR 
+# and fetch the token on behalf of system identity of cluster extension.
+
+# For renewing msi token of cluster extension: 
+# msi adapter will update the status to null in azure cluster identity requests CR, 
+# so that cluster identity operator renews the token.
+
+# hence this perms are required.
+# https://github.com/Azure/ClusterConfigurationAgent/tree/master/Msi-Adapter
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Values.Prefix }}-geneva-role" 
+rules:
+- apiGroups: 
+  - ""
+  resources: # this is needed at cluster level to so that we can insert kubernetes metadata inside each and every logs, o.w. fluentd  will fail by cannot list resource "namespaces" in API group "" at the cluster scope
+  - pods
+  - namespaces
+  verbs: 
+  - get
+  - watch
+  - list
+- apiGroups: # this cluster roles is required but cluster role binding is not required, it can be suimply role binding.
+  - clusterconfig.azure.com
+  resources:
+  - azureclusteridentityrequests
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch
+- apiGroups:
+  - clusterconfig.azure.com
+  resources:
+  - azureclusteridentityrequests/status
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch

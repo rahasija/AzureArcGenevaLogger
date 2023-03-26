@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ required "A valid .Values.Geneva.GCS.Environment entry required!" .Values.Prefix }}-gcstenant-conf
+  namespace: '{{ required "A valid .Values.Geneva.GCS.Environment entry required!" .Values.Release.Namespace }}'
+data:
+  gcstenant1.json: >-
+    {
+      "ServiceArguments": {
+        "Version": "1.0"
+      },
+      "UserArguments": {
+        "GcsAuthIdType": "{{ required "A valid .Values.Geneva.GCS.AuthIdType entry required!" .Values.Geneva.GCS.AuthIdType }}",
+        "GcsEnvironment": "{{ required "A valid .Values.Geneva.GCS.Environment entry required!" .Values.Geneva.GCS.Environment }}",
+        "GcsGenevaAccount": "{{ required "A valid .Values.Geneva.GCS.Account entry required!" .Values.Geneva.GCS.Account }}",
+        "GcsNamespace": "{{ required "A valid .Values.Geneva.GCS.Namespace entry required!" .Values.Geneva.GCS.Namespace }}",
+        "GenevaConfigVersion": "{{ required "A valid .Values.Geneva.GCS.ConfigVersion entry required!" .Values.Geneva.GCS.ConfigVersion }}",
+        "GcsRegion": "{{ required "A valid .Values.Azure.Cluster.Region  entry required!" .Values.Azure.Cluster.Region }}"
+      },
+      "EndpointConfigurations": [
+        {
+          "EndpointPath": "",
+          "EndpointPort": 15000,
+          "EndpointOtlp": "localhost:4319"
+        }
+      ]
+    }
