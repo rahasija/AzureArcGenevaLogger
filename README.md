@@ -25,3 +25,5 @@ then it would be possible to add this helm as dependency chart because then subc
 
 1. Follow TestReadMe.md
 
+For full architecture overview
+https://microsoftapc-my.sharepoint.com/:w:/g/personal/rahasija_microsoft_com/EYvrGyrBTX9MndkGB2GuXj0BJvM45wzaTBEAySah86N2PQ?e=PO9KXR
