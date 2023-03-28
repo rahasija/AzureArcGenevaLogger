@@ -2,7 +2,7 @@
 # Declare variables to be passed into your templates.
 Geneva:
   GCS:
-    AuthIdType: "AuthMSIToken"
+    AuthIdType: "AuthMSIToken" #No need to change.
     Environment: "DiagnosticsProd"
     Account: "AzureMigrateExtProd"
     Namespace: "AzureMigrateExtProd"
@@ -26,7 +26,7 @@ Release: # this value should match with what we provide during az-clusterextensi
 
 
 #Below helm values will be provided by the extension manager(arc agentry) at parent chart level for e.g.
-# helm install azure-springboot azure-springboot-$version.tgz  --create-namespace  --namespace=springbootnamespace --set Values.global.Azure.Extension.Name="myspringbootclusterextension".
+# helm install azure-springboot azure-springboot-$version.tgz  --create-namespace  --namespace=springbootnamespace --set Values.Azure.Extension.Name="myspringbootclusterextension".
 #  Azure:
 #    Extension:
 #      Name: ""
