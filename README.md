@@ -14,8 +14,12 @@ Values.Azure.Extension.Name is set by extension manager at parent chart level, n
 If extension manager would be setting azure values at global level for e.g. by --set Values.global.Azure.Extension.Name="myspringbootclusterextension"
 then it would be possible to add this helm as dependency chart because then subcharts can refer this value by Values.global.Azure.Extension.Name.
 
+**In your go pod**
+- You can refer following go module which will help you to log diagnostic, metric, telemetry and error event, which are compaitable to fluentd config provided in this repo.
+https://github.com/Azure/AzureMigrate-discoveryclusterextension-event/blob/main/README.md
 
-
+- You are free to use your own way of logging the events.
+- Just make sure the routing in fluentd config is in sync with what you are implementing. 
 
 **For understanding fluentdconfig.**
 
