@@ -16,7 +16,33 @@ then it would be possible to add this helm as dependency chart because then subc
 
 **In your go pod**
 - You can refer following go module which will help you to log diagnostic, metric, telemetry and error event, which are compaitable to fluentd config provided in this repo.
-https://github.com/Azure/AzureMigrate-discoveryclusterextension-event/blob/main/README.md
+https://github.com/Azure/azure-migrate-discovery-extension-events
+-
+In your main.go, set zapr logger
+````
+	ctrl.SetLogger(getLogger())
+````
+  
+````
+// GetLogger return a DelegatingLogger.
+func getLogger() logr.Logger {
+	encConfig := zapcore.EncoderConfig{
+		MessageKey:     "Message",
+		LevelKey:       "LogLevel",
+		TimeKey:        "Timestamp",
+		NameKey:        "Name",
+		CallerKey:      "Caller",
+		StacktraceKey:  "Stacktrace",
+		LineEnding:     "\n",
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeCaller:   zapcore.FullCallerEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+	}
+	return zap.New(zap.UseDevMode(false), zap.Encoder(zapcore.NewJSONEncoder(encConfig)))
+}
+
+````
 
 - You are free to use your own way of logging the events.
 - Just make sure the routing in fluentd config is in sync with what you are implementing. 
