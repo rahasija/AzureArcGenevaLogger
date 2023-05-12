@@ -5,6 +5,7 @@
 2023-02-09T12:58:50+05:30	azuremigrate.logfilename 	{"LogLevel":"INFO","Timestamp":"2023-02-08T09:32:45.559Z","Name":"setup","Message":"Using external API for PSSession","PowerShellSessionURL":"localhost:5000","ServiceName":"scvmmextension","ResourceType":"scvmmextension"}
 
 # Kubernetes metadata plugin will transform into this
+````
 2023-02-09T12:58:50+05:30	azuremigrate.logfilename
 {
   "log": "{\"LogLevel\":\"INFO\",\"Timestamp\":\"2023-02-08T14:49:46.744Z\",\"Name\":\"controllers.VirtualMachine\",\"Message\":\"resource not found, won't reconcile\",\"resource\":\"azuremigrate-partnername/rahasya\"}\n",
@@ -31,8 +32,13 @@
     }
   }
 }
+````
 
+# Following four types of record will be emitted if you are using
+https://github.com/Azure/azure-migrate-discovery-extension-events/blob/main/go/zapr_logger.go 
 
+**DiagnosticEvent will look like**
+````
 2023-02-13 15:00:47.398776000 +0530 DiagnosticEvent: 
 {
   "level": "info",
@@ -63,8 +69,10 @@
   "createdAt": "2023-01-04T15:58:32.0572527Z",
   "resourceUID": "a2965c72-fe9c-4bf1-a019-f97fb025d042"
 }
+````
 
-Error Event
+**Error Event will look like**
+````
 2023-02-13 15:00:47.398827600 +0530 ErrorEvent: 
 {
   "level": "error",
@@ -99,8 +107,10 @@ Error Event
   "createdAt": "2023-01-04T15:58:32.0572527Z",
   "resourceUID": "a2965c72-fe9c-4bf1-a019-f97fb025d042"
 }
+````
 
-Telemetry Event will look like
+**Telemetry Event will look like**
+````
 2023-02-13 15:00:47.396508200 +0530 TelemetryEvent:
 {
   "level": "info",
@@ -133,3 +143,4 @@ Telemetry Event will look like
   "createdAt": "2023-01-04T15:58:32.0572527Z",
   "resourceUID": "a2965c72-fe9c-4bf1-a019-f97fb025d042"
 }
+````
