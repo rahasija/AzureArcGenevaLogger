@@ -7,18 +7,8 @@
 
 3. Copy the contents of samplevalues.yaml into your helm\values.yaml file.
 
-P.S.
-You cannot add this chart as subchart of your helm chart because,
-Values.Azure.Extension.Name is set by extension manager at parent chart level, not at global level.
-
-If extension manager would be setting azure values at global level for e.g. by --set Values.global.Azure.Extension.Name="myspringbootclusterextension"
-then it would be possible to add this helm as dependency chart because then subcharts can refer this value by Values.global.Azure.Extension.Name.
-
 **In your go pod**
-- You can refer following go module which will help you to log diagnostic, metric, telemetry and error event, which are compaitable to fluentd config provided in this repo.
-https://github.com/Azure/azure-migrate-discovery-extension-events
--
-In your main.go, set zapr logger
+- In your main.go, set zapr logger
 ````
 	ctrl.SetLogger(getLogger())
 ````
@@ -44,8 +34,11 @@ func getLogger() logr.Logger {
 
 ````
 
-- You are free to use your own way of logging the events.
-- Just make sure the routing in fluentd config is in sync with what you are implementing. 
+- To log events from your reconciler
+  You can refer following go module which will help you to log diagnostic, metric, telemetry and error event, 
+  which is compaitable to fluentd config provided in this repo.
+  https://github.com/Azure/azure-migrate-discovery-extension-events
+
 
 **For understanding fluentdconfig.**
 
@@ -58,3 +51,14 @@ func getLogger() logr.Logger {
 **For full architecture overview**
 
 1. https://microsoftapc-my.sharepoint.com/:w:/g/personal/rahasija_microsoft_com/EYvrGyrBTX9MndkGB2GuXj0BJvM45wzaTBEAySah86N2PQ?e=PO9KXR
+
+**Potentiel Improvements**
+- Referring this helm as dependency in your helm
+  You cannot add this chart as subchart of your helm chart because,
+  Values.Azure.Extension.Name is set by extension manager at parent chart level, not at global level.
+
+ If extension manager would be setting azure values at global level for e.g. by --set Values.global.Azure.Extension.Name="myspringbootclusterextension"
+ then it would be possible to add this helm as dependency chart because then subcharts can refer this value by Values.global.Azure.Extension.Name.
+
+- You are free to use your own way of logging the events.
+- Just make sure the routing in fluentd config is in sync with what you are implementing. 
